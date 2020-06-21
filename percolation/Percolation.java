@@ -9,7 +9,7 @@ import edu.princeton.cs.algs4.WeightedQuickUnionUF;
 public class Percolation {
 
     private boolean[][] grid;
-    private WeightedQuickUnionUF wqu;
+    private WeightedQuickUnionUF percolation, fullness;
     private int virtualTopSite;
     private int virtualBotSite;
     private int gridSize;
@@ -27,17 +27,24 @@ public class Percolation {
         virtualBotSite = n * n + 1;
 
         // Initialize with number of sites + virtual top and bottom sites
-        this.wqu = new WeightedQuickUnionUF(n * n + 2);
+        this.percolation = new WeightedQuickUnionUF(n * n + 2);
+        this.fullness = new WeightedQuickUnionUF(n * n + 2);
     }
 
     // get the 1D index for a site in the grid
-    public int index1D(int row, int col) {
+    private int index1D(int row, int col) {
         return row * this.gridSize + col;
     }
 
     // opens the site (row, col) if it is not open already
     public void open(int row, int col) {
-        if (this.grid[row][col]) {
+        if (row <= 0 || col <= 0 || row > this.gridSize || col > this.gridSize) {
+            throw new IllegalArgumentException("row and col should be greater than 0.");
+        }
+        int rowBase0 = row - 1;
+        int colBase0 = col - 1;
+
+        if (this.grid[rowBase0][colBase0]) {
             // Already opened
             return;
         }
@@ -48,54 +55,64 @@ public class Percolation {
         boolean hasLeft = true;
         boolean hasRight = true;
 
-        this.grid[row][col] = true;
+        this.grid[rowBase0][colBase0] = true;
         this.numberOfOpenSites += 1;
 
-        if (row == 0)
+        if (rowBase0 == 0)
             hasTop = false;
-        else if (row == this.gridSize - 1)
+        if (rowBase0 == this.gridSize - 1)
             hasBot = false;
 
 
-        if (col == 0)
+        if (colBase0 == 0)
             hasLeft = false;
-        else if (col == this.gridSize - 1)
+        if (colBase0 == this.gridSize - 1)
             hasRight = false;
 
-        if (hasTop && this.grid[row - 1][col]) {
-            this.wqu.union(index1D(row, col), index1D(row - 1, col));
+        if (hasTop && this.grid[rowBase0 - 1][colBase0]) {
+            this.percolation.union(index1D(rowBase0, colBase0), index1D(rowBase0 - 1, colBase0));
+            this.fullness.union(index1D(rowBase0, colBase0), index1D(rowBase0 - 1, colBase0));
         }
 
-        if (hasBot && this.grid[row + 1][col]) {
-            this.wqu.union(index1D(row, col), index1D(row + 1, col));
+        if (hasBot && this.grid[rowBase0 + 1][colBase0]) {
+            this.percolation.union(index1D(rowBase0, colBase0), index1D(rowBase0 + 1, colBase0));
+            this.fullness.union(index1D(rowBase0, colBase0), index1D(rowBase0 + 1, colBase0));
         }
 
-        if (hasLeft && this.grid[row][col - 1]) {
-            this.wqu.union(index1D(row, col), index1D(row, col - 1));
+        if (hasLeft && this.grid[rowBase0][colBase0 - 1]) {
+            this.percolation.union(index1D(rowBase0, colBase0), index1D(rowBase0, colBase0 - 1));
+            this.fullness.union(index1D(rowBase0, colBase0), index1D(rowBase0, colBase0 - 1));
         }
 
-        if (hasRight && this.grid[row][col + 1]) {
-            this.wqu.union(index1D(row, col), index1D(row, col + 1));
+        if (hasRight && this.grid[rowBase0][colBase0 + 1]) {
+            this.percolation.union(index1D(rowBase0, colBase0), index1D(rowBase0, colBase0 + 1));
+            this.fullness.union(index1D(rowBase0, colBase0), index1D(rowBase0, colBase0 + 1));
         }
 
         if (!hasTop) {
-            this.wqu.union(index1D(row, col), this.virtualTopSite);
+            this.percolation.union(index1D(rowBase0, colBase0), this.virtualTopSite);
+            this.fullness.union(index1D(rowBase0, colBase0), this.virtualTopSite);
         }
 
-        // if the site to open is in the bottom row, connect it to the virtual bottom node
         if (!hasBot) {
-            this.wqu.union(index1D(row, col), this.virtualBotSite);
+            this.percolation.union(index1D(rowBase0, colBase0), this.virtualBotSite);
         }
     }
 
     // is the site (row, col) open?
     public boolean isOpen(int row, int col) {
-        return this.grid[row][col];
+        if (row <= 0 || col <= 0 || row > this.gridSize || col > this.gridSize) {
+            throw new IllegalArgumentException("row and col should be greater than 0.");
+        }
+        return this.grid[row - 1][col - 1];
     }
 
     // is the site (row, col) full?
     public boolean isFull(int row, int col) {
-        return this.wqu.connected(index1D(row, col), this.virtualTopSite);
+        if (row <= 0 || col <= 0 || row > this.gridSize || col > this.gridSize) {
+            throw new IllegalArgumentException("row and col should be greater than 0.");
+        }
+        return this.fullness.find(index1D(row - 1, col - 1)) == this.fullness.find(this.virtualTopSite) && this.isOpen(row, col);
     }
 
     // returns the number of open sites
@@ -105,6 +122,12 @@ public class Percolation {
 
     // does the system percolate?
     public boolean percolates() {
-        return this.wqu.connected(this.virtualBotSite, this.virtualTopSite);
+        return this.percolation.find(this.virtualBotSite) == this.percolation.find(this.virtualTopSite);
+    }
+
+    public static void main(String[] args) {
+        Percolation system = new Percolation(1);
+        system.open(1, 1);
+
     }
 }

@@ -26,8 +26,8 @@ public class PercolationStats {
 
             int numberOfOpenSites = 0;
             while (!system.percolates()) {
-                int row = StdRandom.uniform(n);
-                int col = StdRandom.uniform(n);
+                int row = StdRandom.uniform(n) + 1;
+                int col = StdRandom.uniform(n) + 1;
 
                 if (!system.isOpen(row, col)) {
                     numberOfOpenSites += 1;
@@ -68,8 +68,6 @@ public class PercolationStats {
         int trials = Integer.parseInt(args[1]);
         PercolationStats stats = new PercolationStats(n, trials);
 
-        StdOut.println("Stats for grid of size " + n + " * " + n + " and trials " + trials + "...");
-        StdOut.println("---------------------------------");
         StdOut.println("mean                    = " + stats.mean());
         StdOut.println("stddev                  = " + stats.stddev());
         StdOut.println(
